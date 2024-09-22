@@ -1,19 +1,36 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { GeolocationModule } from './geolocation/geolocation.module';
+import { GeolocationService } from './geolocation/geolocation.service';
+import { AppDataSource } from './data-source';
+import { AddressController } from './address/address.controller';
+import { Address } from './address/address.entity';
+import { AddressService } from './address/address.service';
+import { AddressModule } from './address/address.module';
+import { Geolocation } from './geolocation/geolocation.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'sql.freedb.tech',
-      port: 3306,
-      username: 'freedb_meik1998dev',
-      password: 'pEMb&?8B!f5#9Be',
-      database: 'freedb_geo_database',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
     }),
+    TypeOrmModule.forRootAsync({
+      useFactory: async () => {
+        if (!AppDataSource.isInitialized) {
+          await AppDataSource.initialize();
+        }
+        return {
+          ...AppDataSource.options,
+        };
+      },
+    }),
+    TypeOrmModule.forFeature([Address, Geolocation]),
+    AddressModule,
+    GeolocationModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [AddressController],
+  providers: [AddressService, GeolocationService],
 })
 export class AppModule {}
